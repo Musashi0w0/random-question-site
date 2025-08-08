@@ -2,40 +2,39 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ランダム質問</title>
+  <title>クイズ500のこと風</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1 id="question">ここに質問が表示されます</h1>
-  <button id="nextBtn">次の質問</button>
-  <p id="status"></p>
+  <div id="question-container">読み込み中...</div>
+  <button id="next-question">次の質問</button>
 
   <script>
-    const btn = document.getElementById("nextBtn");
-    const questionElement = document.getElementById("question");
-    const statusElement = document.getElementById("status");
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbzuUdwdTcxCsxpAbgOyguTeSxBWPidM-U02UUZYSa5zZvvR3HfR2lNMb9voLeyhDTw/exec";
+    const sheetUrl = 'https://script.google.com/macros/s/AKfycbzuUdwdTcxCsxpAbgOyguTeSxBWPidM-U02UUZYSa5zZvvR3HfR2lNMb9voLeyhDTw/exec';
+    const questionContainer = document.getElementById('question-container');
+    const button = document.getElementById('next-question');
 
     async function fetchQuestion() {
-      btn.disabled = true;
-      statusElement.textContent = "読み込み中...";
+      button.disabled = true;
+      questionContainer.textContent = '読み込み中...';
 
       try {
-        const response = await fetch(scriptUrl);
+        const response = await fetch(sheetUrl);
         const data = await response.json();
-        questionElement.textContent = data.question;
-        statusElement.textContent = "";
+        const questions = data.questions;
+        const randomIndex = Math.floor(Math.random() * questions.length);
+        const question = questions[randomIndex];
+        questionContainer.textContent = question;
       } catch (error) {
-        questionElement.textContent = "取得に失敗しました";
-        statusElement.textContent = "";
-      } finally {
-        btn.disabled = false;
+        questionContainer.textContent = '質問の取得に失敗しました';
+        console.error(error);
       }
+
+      button.disabled = false;
     }
 
-    btn.addEventListener("click", fetchQuestion);
-
-    // 初回表示
-    fetchQuestion();
+    button.addEventListener('click', fetchQuestion);
+    fetchQuestion(); // 初回読み込み
   </script>
 </body>
 </html>
