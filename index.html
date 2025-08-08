@@ -1,32 +1,46 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>ランダム質問</title>
+  <meta charset="UTF-8">
+  <title>クイズ質問表示</title>
 </head>
-<body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
-  <h1>今日の質問はこちら！</h1>
-  <p id="question" style="font-size: 24px; margin: 40px 0;">読み込み中...</p>
-  <button id="nextBtn" style="font-size: 18px; padding: 10px 20px;">もう一問表示</button>
+<body>
+  <h1 id="question">ここに質問が表示されます</h1>
+  <button id="nextButton">次の質問</button>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxIw7zTJF9OeThFAYCM7IP6ou8t6QxDV8kdnOFEcBwm7nQbV0wFvkuCi03UGOYP-Lo/exec"; // ←ここにApps ScriptのURLを入れる
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/<スプレッドシートID>/gviz/tq?tqx=out:json&sheet=シート1'; // ←IDとシート名を差し替えて
 
-    async function loadQuestion() {
+    const questionElement = document.getElementById('question');
+    const nextButton = document.getElementById('nextButton');
+
+    async function fetchQuestion() {
+      // ボタンを無効化
+      nextButton.disabled = true;
+      questionElement.textContent = '読み込み中…';
+
       try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        document.getElementById('question').textContent = data.question;
-      } catch (e) {
-        document.getElementById('question').textContent = "質問の取得に失敗しました。";
-        console.error(e);
+        const response = await fetch(sheetURL);
+        const text = await response.text();
+
+        // JSON形式に変換
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        const rows = json.table.rows;
+
+        const questions = rows.map(row => row.c[0]?.v).filter(q => q); // null除去
+        const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+
+        questionElement.textContent = randomQuestion;
+      } catch (error) {
+        questionElement.textContent = '質問の取得に失敗しました';
+        console.error(error);
       }
+
+      // ボタンを有効化
+      nextButton.disabled = false;
     }
 
-    document.getElementById('nextBtn').addEventListener('click', loadQuestion);
-
-    loadQuestion();
+    nextButton.addEventListener('click', fetchQuestion);
   </script>
 </body>
 </html>
-
