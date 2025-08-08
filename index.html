@@ -2,68 +2,65 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>質問ランダム表示</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 2em;
-      background-color: #1a1a1a;
-      color: white;
-    }
-    #question-container {
-      margin: 2em auto;
-      padding: 2em;
-      border: 3px solid #ffcc00;
-      border-radius: 10px;
-      max-width: 600px;
-      font-size: 1.5rem;
-      background-color: #333;
-    }
-    button {
-      font-size: 1.2rem;
-      padding: 1em 2em;
-      background-color: #ffcc00;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      color: black;
-    }
-    button:disabled {
-      background-color: #999;
-      cursor: not-allowed;
-    }
-  </style>
+  <title>ランダム質問表示</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>ランダム質問表示</h1>
-  <div id="question-container">読み込み中...</div>
+  <h1>クイズ500のこと風ランダム質問</h1>
+  <div id="question-container">ここに質問が表示されます</div>
   <button id="next-question">次の質問</button>
+  <p id="status"></p>
 
   <script>
-    const questionContainer = document.getElementById("question-container");
-    const button = document.getElementById("next-question");
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzuUdwdTcxCsxpAbgOyguTeSxBWPidM-U02UUZYSa5zZvvR3HfR2lNMb9voLeyhDTw/exec"; // ここをデプロイ済みのURLに置き換えてください
+    const questionContainer = document.getElementById('question-container');
+    const status = document.getElementById('status');
+    const button = document.getElementById('next-question');
 
-    async function fetchQuestion() {
-      button.disabled = true;
-      questionContainer.textContent = "読み込み中...";
+    // ここにGoogle Apps Scriptの公開URLを入れてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzc4CK3SML40hTndAAn9vRiECpBtfx7UjAzTCrvSYC1Gv0-SeQnVxkq5N-TADfSW1o/exec";
+
+    let questions = [];
+
+    async function fetchQuestions() {
+      status.textContent = "質問を取得中...";
       try {
         const res = await fetch(GAS_URL);
-        if (!res.ok) throw new Error("HTTP error " + res.status);
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         const data = await res.json();
-        questionContainer.textContent = data.question || "質問がありません";
-      } catch (error) {
-        questionContainer.textContent = "質問の取得に失敗しました";
-        console.error(error);
+        if (data.error) {
+          status.textContent = "エラー: " + data.error;
+          return;
+        }
+        questions = data.questions;
+        status.textContent = "";
+        showRandomQuestion();
+      } catch (e) {
+        status.textContent = "質問の取得に失敗しました";
+        console.error(e);
       }
-      button.disabled = false;
     }
 
-    button.addEventListener("click", fetchQuestion);
+    function showRandomQuestion() {
+      if (questions.length === 0) {
+        questionContainer.textContent = "質問がありません";
+        return;
+      }
+      const randomIndex = Math.floor(Math.random() * questions.length);
+      questionContainer.textContent = questions[randomIndex];
+    }
 
-    // ページ読み込み時に最初の質問を表示
-    fetchQuestion();
+    button.addEventListener('click', () => {
+      button.disabled = true;
+      status.textContent = "読み込み中...";
+      setTimeout(() => {
+        showRandomQuestion();
+        status.textContent = "";
+        button.disabled = false;
+      }, 300);  // 読み込みっぽく少し遅延をつける
+    });
+
+    // 初回ロードで質問を取得
+    fetchQuestions();
   </script>
 </body>
 </html>
